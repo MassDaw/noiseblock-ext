@@ -12,68 +12,68 @@ const translations = {
   es: {
     addKeyword: 'Añadir palabra clave',
     sensitive: 'Modalidad sensible',
-    sponsored: 'Esconder patrocinados',
-    customSites: 'Sitios personalizados:',
-    addSite: 'Añadir sitio',
-    coffeeMsg: '¿Esta extensión te ha sido útil? ',
+    sponsored: 'Ocultar patrocinados',
+    coffeeMsg: '¿Esta extensión te ha sido útil?',
     coffeeBtn: 'Invítame un café',
     delete: 'Eliminar',
     dark: 'Modo oscuro',
+    censorMode: 'Modo de censura:',
+    tooltip: 'Filtra automáticamente palabras relacionadas con contenido delicado, spoilers, violencia, política, etc.'
   },
   en: {
     addKeyword: 'Add keyword',
     sensitive: 'Sensitive mode',
     sponsored: 'Hide sponsored',
-    customSites: 'Custom sites:',
-    addSite: 'Add site',
-    coffeeMsg: 'Has this extension been useful? ',
+    coffeeMsg: 'Has this extension been useful?',
     coffeeBtn: 'Buy Me a Coffee',
     delete: 'Delete',
     dark: 'Dark mode',
+    censorMode: 'Censor mode:',
+    tooltip: 'Automatically filters words related to sensitive content, spoilers, violence, politics, etc.'
   },
   fr: {
     addKeyword: 'Ajouter un mot-clé',
     sensitive: 'Mode sensible',
     sponsored: 'Masquer les sponsorisés',
-    customSites: 'Sites personnalisés :',
-    addSite: 'Ajouter un site',
-    coffeeMsg: 'Cette extension vous a été utile ? ',
+    coffeeMsg: 'Cette extension vous a été utile ?',
     coffeeBtn: 'Offre-moi un café',
     delete: 'Supprimer',
     dark: 'Mode sombre',
+    censorMode: 'Mode de censure :',
+    tooltip: 'Filtre automatiquement les mots liés au contenu sensible, spoilers, violence, politique, etc.'
   },
   de: {
     addKeyword: 'Schlüsselwort hinzufügen',
     sensitive: 'Sensibler Modus',
     sponsored: 'Gesponserte ausblenden',
-    customSites: 'Benutzerdefinierte Seiten:',
-    addSite: 'Seite hinzufügen',
-    coffeeMsg: 'War diese Erweiterung nützlich? ',
+    coffeeMsg: 'War diese Erweiterung nützlich?',
     coffeeBtn: 'Kaffee spendieren',
     delete: 'Löschen',
     dark: 'Dunkler Modus',
+    censorMode: 'Zensurmodus:',
+    tooltip: 'Filtert automatisch Wörter zu sensiblen Themen, Spoilern, Gewalt, Politik usw.'
   },
   it: {
     addKeyword: 'Aggiungi parola chiave',
     sensitive: 'Modalità sensibile',
     sponsored: 'Nascondi sponsorizzati',
-    customSites: 'Siti personalizzati:',
-    addSite: 'Aggiungi sito',
     coffeeMsg: 'Questa estensione ti è stata utile?',
     coffeeBtn: 'Offrimi un caffè',
     delete: 'Elimina',
     dark: 'Modalità scura',
+    censorMode: 'Modalità censura:',
+    tooltip: 'Filtra automaticamente parole su contenuti delicati, spoiler, violenza, politica, ecc.'
   },
   pt: {
     addKeyword: 'Adicionar palavra-chave',
     sensitive: 'Modo sensível',
     sponsored: 'Ocultar patrocinados',
-    customSites: 'Sites personalizados:',
-    addSite: 'Adicionar site',
     coffeeMsg: 'Esta extensão foi útil?',
     coffeeBtn: 'Me pague um café',
     delete: 'Excluir',
     dark: 'Modo escuro',
+    censorMode: 'Modo de censura:',
+    tooltip: 'Filtra automaticamente palavras de conteúdo sensível, spoilers, violência, política, etc.'
   }
 };
 
@@ -86,13 +86,14 @@ const sensitiveInfoTexts = {
   pt: 'Filtra automaticamente palavras de conteúdo sensível, spoilers, violência, política, etc.'
 };
 
+// Elimino toda la lógica de sitios personalizados y solo dejo Twitter/X
 const censorModeLabels = {
-  es: ['Censurar palabra', 'Ocultar párrafo', 'Ocultar elemento completo'],
-  en: ['Censor word', 'Hide paragraph', 'Hide full element'],
-  fr: ['Censurer le mot', 'Masquer le paragraphe', 'Masquer l’élément complet'],
-  de: ['Wort zensieren', 'Absatz ausblenden', 'Ganzes Element ausblenden'],
-  it: ['Censura parola', 'Nascondi paragrafo', 'Nascondi elemento intero'],
-  pt: ['Censurar palavra', 'Ocultar parágrafo', 'Ocultar elemento completo']
+  es: ['Censurar palabra', 'Ocultar tweet completo'],
+  en: ['Censor word', 'Hide tweet'],
+  fr: ['Censurer le mot', 'Masquer le tweet'],
+  de: ['Wort zensieren', 'Tweet ausblenden'],
+  it: ['Censura parola', 'Nascondi tweet'],
+  pt: ['Censurar palavra', 'Ocultar tweet']
 };
 
 let currentLang = 'es';
@@ -111,44 +112,44 @@ function setLanguage(lang) {
   document.getElementById('keywordInput').placeholder = t.addKeyword;
   document.getElementById('sensitiveLabel').textContent = t.sensitive;
   document.getElementById('sponsoredLabel').textContent = t.sponsored;
-  document.getElementById('customSitesLabel').textContent = t.customSites;
-  document.getElementById('siteInput').placeholder = 'https://ejemplo.com/*';
-  document.querySelector('#addSiteForm button').title = t.addSite;
   document.getElementById('coffeeMsg').innerHTML = t.coffeeMsg + ' <span class="coffee-icon">☕</span>';
   document.getElementById('coffeeBtn').textContent = t.coffeeBtn;
   document.getElementById('darkModeBtn').title = t.dark;
+  // Actualizo el selector de idioma visual
   document.getElementById('langFlag').textContent = langData[lang].flag;
   document.getElementById('langCode').textContent = langData[lang].code;
-  document.querySelectorAll('.delete-btn').forEach(btn => btn.title = t.delete);
-  document.querySelectorAll('.site-delete-btn').forEach(btn => btn.title = t.delete);
-  // Marcar item seleccionado en el menú
-  document.querySelectorAll('.dropdown-item').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.lang === lang);
+  // Traducir selector de modo de censura y forzar redibujado
+  const censorModeSelect = document.getElementById('censorMode');
+  const labels = censorModeLabels[lang] || censorModeLabels['es'];
+  const currentValue = censorModeSelect.value;
+  const newSelect = censorModeSelect.cloneNode(false);
+  [0,1].forEach(i => {
+    const opt = document.createElement('option');
+    opt.value = i === 0 ? 'word' : 'element';
+    opt.textContent = labels[i];
+    newSelect.appendChild(opt);
   });
+  newSelect.value = currentValue;
+  censorModeSelect.parentNode.replaceChild(newSelect, censorModeSelect);
+  newSelect.id = 'censorMode';
+  newSelect.className = 'censor-mode-select';
+  newSelect.onchange = censorModeSelect.onchange;
+  document.querySelector('.censor-mode-label').textContent = t.censorMode;
   // Tooltip info modalidad sensible
   let infoIcon = document.getElementById('sensitiveInfo');
-  let tooltip = infoIcon.querySelector('.info-tooltip');
-  if (!tooltip) {
-    tooltip = document.createElement('span');
-    tooltip.className = 'info-tooltip';
-    infoIcon.appendChild(tooltip);
+  if (infoIcon) {
+    let tooltip = infoIcon.querySelector('.info-tooltip');
+    if (!tooltip) {
+      tooltip = document.createElement('span');
+      tooltip.className = 'info-tooltip';
+      infoIcon.appendChild(tooltip);
+    }
+    tooltip.textContent = t.tooltip;
   }
-  tooltip.textContent = sensitiveInfoTexts[lang] || sensitiveInfoTexts['es'];
-
-  // Traducir selector de modo de censura
-  const modeOptions = document.querySelectorAll('#censorMode option');
-  const labels = censorModeLabels[lang] || censorModeLabels['es'];
-  modeOptions[0].textContent = labels[0];
-  modeOptions[1].textContent = labels[1];
-  modeOptions[2].textContent = labels[2];
-  document.querySelector('.censor-mode-label').textContent = {
-    es: 'Modo de censura:',
-    en: 'Censor mode:',
-    fr: 'Mode de censure :',
-    de: 'Zensurmodus:',
-    it: 'Modalità censura:',
-    pt: 'Modo de censura:'
-  }[lang] || 'Modo de censura:';
+  document.querySelectorAll('.delete-btn').forEach(btn => btn.title = t.delete);
+  document.querySelectorAll('.lang-flag').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.lang === lang);
+  });
 }
 
 // Dropdown idioma
@@ -255,87 +256,6 @@ sponsoredMode.onchange = () => {
   chrome.storage.local.set({ sponsoredMode: sponsoredMode.checked });
 };
 
-function renderSites(sites) {
-  const siteList = document.getElementById('siteList');
-  siteList.innerHTML = '';
-  sites.forEach((site, idx) => {
-    const li = document.createElement('li');
-    li.textContent = site;
-    const btn = document.createElement('button');
-    btn.textContent = '✕';
-    btn.className = 'site-delete-btn';
-    btn.title = translations[currentLang].delete;
-    btn.onclick = () => removeSite(idx);
-    li.appendChild(btn);
-    siteList.appendChild(li);
-  });
-}
-
-function saveSites(sites) {
-  chrome.storage.local.set({ sites });
-}
-
-function addSite(site) {
-  site = site.trim();
-  if (!site) return;
-  chrome.storage.local.get(['sites'], data => {
-    let sites = Array.isArray(data.sites) ? data.sites : [];
-    if (!sites.includes(site)) {
-      sites.push(site);
-      saveSites(sites);
-      renderSites(sites);
-      document.getElementById('siteInput').value = '';
-    }
-  });
-}
-
-function removeSite(idx) {
-  chrome.storage.local.get(['sites'], data => {
-    let sites = Array.isArray(data.sites) ? data.sites : [];
-    sites.splice(idx, 1);
-    saveSites(sites);
-    renderSites(sites);
-  });
-}
-
-document.getElementById('addSiteForm').onsubmit = e => {
-  e.preventDefault();
-  addSite(document.getElementById('siteInput').value);
-};
-
-document.getElementById('addCurrentSiteBtn').onclick = function() {
-  if (!chrome.tabs) return;
-  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    if (!tabs || !tabs[0] || !tabs[0].url) return;
-    try {
-      const url = new URL(tabs[0].url);
-      const sitePattern = url.origin + '/*';
-      addSite(sitePattern);
-    } catch (e) {}
-  });
-};
-
-function loadSettings() {
-  chrome.storage.local.get(['keywords', 'sensitiveMode', 'sponsoredMode', 'sites'], data => {
-    renderKeywords(Array.isArray(data.keywords) ? data.keywords : []);
-    sensitiveMode.checked = !!data.sensitiveMode;
-    sponsoredMode.checked = !!data.sponsoredMode;
-    renderSites(Array.isArray(data.sites) ? data.sites : []);
-  });
-}
-
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local') {
-    if (changes.keywords) renderKeywords(changes.keywords.newValue || []);
-    if (changes.sites) renderSites(changes.sites.newValue || []);
-  }
-});
-
-// Modo sensible: añade palabras predefinidas sin borrar las del usuario
-sensitiveMode.addEventListener('change', () => {
-  chrome.storage.local.set({ sensitiveMode: sensitiveMode.checked });
-});
-
 // Guardar y cargar modo de censura
 const censorModeSelect = document.getElementById('censorMode');
 censorModeSelect.onchange = function() {
@@ -348,7 +268,6 @@ function loadCensorMode() {
 }
 
 // Inicializar
-loadSettings();
 loadLanguage();
 loadDarkMode();
 loadCensorMode(); 

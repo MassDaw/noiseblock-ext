@@ -1,16 +1,14 @@
-# NoiseBlock
+# NoiseBlock (Twitter/X)
 
-NoiseBlock es una extensión ligera y minimalista para Chrome/Brave que te permite filtrar publicaciones y comentarios con palabras clave personalizadas en redes sociales (Twitter/X, Facebook, Reddit) y en cualquier sitio que añadas manualmente.
+NoiseBlock es una extensión ligera y precisa para filtrar y censurar palabras, spoilers y contenido no deseado en Twitter/X.
 
 ## Características
-- Oculta automáticamente publicaciones y comentarios que contengan palabras clave definidas por el usuario.
-- Permite añadir y eliminar palabras clave fácilmente desde el popup.
-- Filtro opcional de publicaciones patrocinadas/sugeridas.
-- "Modo sensible": activa un filtro temático de palabras delicadas (spoilers, violencia, política, etc.).
+- Censura palabras específicas en tweets y comentarios (insensible a tildes y mayúsculas).
+- Permite elegir entre censurar solo la palabra, ocultar el tweet completo, o usar un modo sensible para filtrar temas delicados.
+- Añade y elimina palabras clave fácilmente desde el popup.
+- Filtro opcional de tweets patrocinados/sugeridos.
 - Soporte multilingüe (ES, EN, FR, DE, IT, PT).
 - Interfaz moderna, responsiva y con modo oscuro.
-- **Selector de modo de censura**: elige entre censurar solo la palabra, ocultar el párrafo, u ocultar el elemento completo.
-- El filtrado es insensible a tildes/acentos y mayúsculas/minúsculas ("basilica" bloqueará "Basílica").
 - No recoge ni comparte datos personales. Todo se guarda localmente en tu navegador.
 
 ## Instalación
@@ -19,19 +17,18 @@ NoiseBlock es una extensión ligera y minimalista para Chrome/Brave que te permi
 3. Haz clic en "Cargar descomprimida" y selecciona la carpeta del proyecto.
 
 ## Uso
-- Haz clic en el icono de NoiseBlock en la barra de extensiones.
+- Haz clic en el icono de NoiseBlock en la barra de extensiones mientras navegas Twitter/X.
 - Añade palabras clave que quieras filtrar.
 - Marca "Modo sensible" para activar el filtro temático.
-- Añade sitios personalizados si quieres filtrar en otras webs.
 - Cambia el idioma, el modo de censura o activa el modo oscuro desde el popup.
 
 ## Permisos requeridos
 - `activeTab`: para poder filtrar el contenido de la pestaña activa.
 - `storage`: para guardar tus palabras clave y configuración localmente.
-- `host_permissions`: solo para los sitios que elijas (por defecto Twitter, Facebook, Reddit y los que añadas manualmente).
+- `host_permissions`: solo para Twitter/X.
 
 ## Privacidad
-Esta extensión **no recoge ni comparte datos personales**. Todo lo que configuras (palabras clave, sitios, opciones) se guarda únicamente en tu navegador, usando `chrome.storage.local`.
+Esta extensión **no recoge ni comparte datos personales**. Todo lo que configuras (palabras clave, opciones) se guarda únicamente en tu navegador, usando `chrome.storage.local`.
 
 ## Autor
 [coff.ee/freeextensions](https://coff.ee/freeextensions) 

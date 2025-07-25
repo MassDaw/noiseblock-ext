@@ -9,7 +9,7 @@
 <body>
   <div class="container">
     <div class="header-row">
-      <span class="appname">NoiseBlock</span>
+      <span class="appname">NoiseBlock (Twitter/X)</span>
       <div class="header-actions">
         <button id="darkModeBtn" title="Modo oscuro" class="icon-btn">🌙</button>
         <div class="dropdown" id="langDropdown">
@@ -36,25 +36,15 @@
       <label class="checkbox-row"><input type="checkbox" id="sensitiveMode"><span id="sensitiveLabel">Modalidad sensible</span><span class="info-icon" id="sensitiveInfo" tabindex="0">ℹ️</span></label>
       <label class="checkbox-row"><input type="checkbox" id="sponsoredMode"><span id="sponsoredLabel">Ocultar patrocinados</span></label>
     </div>
-    <div class="sites-section">
-      <label class="sites-label" id="customSitesLabel">Sitios personalizados:</label>
-      <form id="addSiteForm" class="input-row">
-        <input type="text" id="siteInput" placeholder="https://ejemplo.com/*" maxlength="128" autocomplete="off" required>
-        <button type="button" id="addCurrentSiteBtn" title="Añadir sitio actual" class="add-btn">🌐</button>
-        <button type="submit" title="Añadir sitio" class="add-btn">+</button>
-      </form>
-      <div class="censor-mode-row">
-        <label for="censorMode" class="censor-mode-label">Modo de censura:</label>
-        <select id="censorMode" class="censor-mode-select">
-          <option value="word">Censurar palabra</option>
-          <option value="paragraph">Ocultar párrafo</option>
-          <option value="element">Ocultar elemento completo</option>
-        </select>
-      </div>
-      <ul id="siteList" class="list"></ul>
+    <div class="censor-mode-row">
+      <label for="censorMode" class="censor-mode-label">Modo de censura:</label>
+      <select id="censorMode" class="censor-mode-select">
+        <option value="word">Censurar palabra</option>
+        <option value="element">Ocultar tweet completo</option>
+      </select>
     </div>
     <div class="coffee-section">
-      <div class="coffee-msg" id="coffeeMsg">¿Esta extensión te ha sido útil? </div>
+      <div class="coffee-msg" id="coffeeMsg">¿Esta extensión te ha sido útil? <span class="coffee-icon">☕</span></div>
       <a href="https://coff.ee/freeextensions" target="_blank" class="coffee-btn" id="coffeeBtn">Invítame un café</a>
     </div>
   </div>

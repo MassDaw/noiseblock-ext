@@ -54,9 +54,13 @@ function isCustomSiteActive() {
 
 function filterTwitter(keywords, hideSponsored) {
   document.querySelectorAll('article').forEach(article => {
-    const text = article.innerText;
-    if (textMatchesKeywords(text, keywords)) hideElement(article);
-    else if (hideSponsored && /Promoted|Sugerido para ti|Publicidad/i.test(text)) hideElement(article);
+    if (censorMode === 'word') {
+      walkAndCensorWords(article, keywords);
+    } else {
+      const text = article.innerText;
+      if (textMatchesKeywords(text, keywords)) hideElement(article);
+      else if (hideSponsored && /Promoted|Sugerido para ti|Publicidad/i.test(text)) hideElement(article);
+    }
   });
 }
 
@@ -111,12 +115,12 @@ function buildAccentInsensitiveRegex(word) {
   }
   return new RegExp(pattern, 'giu');
 }
-function censorWordInElement(el, keywords) {
-  if (!el || el.classList.contains('noiseblock-censored')) return;
-  let origText = el.innerText;
-  let html = el.innerHTML;
-  let changed = false;
+function censorWordInTextNode(node, keywords) {
+  if (!node || node.parentNode.classList && node.parentNode.classList.contains('noiseblock-censored')) return;
+  let origText = node.textContent;
   let normOrig = normalizeText(origText);
+  let changed = false;
+  let newText = origText;
   keywords.forEach(word => {
     const normWord = normalizeText(word);
     let idx = normOrig.indexOf(normWord);
@@ -134,12 +138,12 @@ function censorWordInElement(el, keywords) {
         count++;
         i++;
       }
-      // Reemplaza solo la primera ocurrencia de realMatch en el HTML
+      // Reemplaza solo la primera ocurrencia de realMatch
       let safeMatch = realMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      let censorSpan = '<span class="noiseblock-censored-word">•••••</span>';
-      let newHtml = html.replace(new RegExp(safeMatch, 'u'), censorSpan);
-      if (newHtml !== html) {
-        html = newHtml;
+      let censorSpan = '•••••';
+      let newNewText = newText.replace(new RegExp(safeMatch, 'u'), censorSpan);
+      if (newNewText !== newText) {
+        newText = newNewText;
         changed = true;
       }
       // Busca la siguiente ocurrencia
@@ -149,18 +153,27 @@ function censorWordInElement(el, keywords) {
     }
   });
   if (changed) {
-    el.setAttribute('data-noiseblock-html', el.innerHTML);
-    el.innerHTML = html;
-    el.classList.add('noiseblock-censored');
+    // Reemplaza el nodo de texto por un span con la censura
+    const span = document.createElement('span');
+    span.className = 'noiseblock-censored-word';
+    span.textContent = newText;
+    node.parentNode.replaceChild(span, node);
+  }
+}
+function walkAndCensorWords(root, keywords) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+  let node;
+  while ((node = walker.nextNode())) {
+    censorWordInTextNode(node, keywords);
   }
 }
 function restoreAllCensoredWords() {
-  document.querySelectorAll('.noiseblock-censored').forEach(el => {
-    if (el.hasAttribute('data-noiseblock-html')) {
-      el.innerHTML = el.getAttribute('data-noiseblock-html');
-      el.removeAttribute('data-noiseblock-html');
+  // Restaurar todos los spans de censura a texto original si es posible
+  document.querySelectorAll('.noiseblock-censored-word').forEach(span => {
+    if (span.dataset && span.dataset.origText) {
+      const textNode = document.createTextNode(span.dataset.origText);
+      span.parentNode.replaceChild(textNode, span);
     }
-    el.classList.remove('noiseblock-censored');
   });
 }
 function hideParagraph(el) {
@@ -170,11 +183,7 @@ function hideParagraph(el) {
 }
 function filterCustomSites(keywords) {
   if (censorMode === 'word') {
-    document.querySelectorAll('body *:not(script):not(style)').forEach(el => {
-      if (el.children.length === 0 && textMatchesKeywords(el.innerText, keywords)) {
-        censorWordInElement(el, keywords);
-      }
-    });
+    walkAndCensorWords(document.body, keywords);
   } else if (censorMode === 'paragraph') {
     document.querySelectorAll('body *:not(script):not(style)').forEach(el => {
       if (el.children.length === 0 && textMatchesKeywords(el.innerText, keywords)) {
@@ -198,20 +207,8 @@ function runFilter() {
   restoreAllCustomCensor();
   const keywords = getAllKeywords();
   const url = window.location.hostname;
-  if (
-    url.includes('twitter.com') || url.includes('x.com') ||
-    url.includes('reddit.com') || url.includes('facebook.com') ||
-    isCustomSiteActive()
-  ) {
-    if (url.includes('twitter.com') || url.includes('x.com')) {
-      filterTwitter(keywords, sponsoredMode);
-    } else if (url.includes('reddit.com')) {
-      filterReddit(keywords, sponsoredMode);
-    } else if (url.includes('facebook.com')) {
-      filterFacebook(keywords, sponsoredMode);
-    } else if (isCustomSiteActive()) {
-      filterCustomSites(keywords);
-    }
+  if (url.includes('twitter.com') || url.includes('x.com')) {
+    filterTwitter(keywords, sponsoredMode);
   }
 }
 
@@ -241,6 +238,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
 if (!document.getElementById('noiseblock-censor-style')) {
   const style = document.createElement('style');
   style.id = 'noiseblock-censor-style';
-  style.textContent = `.noiseblock-censored-word { background: #222; color: #fff; border-radius: 3px; padding: 0 3px; font-size: 1em; }`;
+  style.textContent = `.noiseblock-censored-word { background: #222; color: #fff; border-radius: 3px; padding: 0 3px; font-size: 1em; display: inline; }`;
   document.head.appendChild(style);
 } 

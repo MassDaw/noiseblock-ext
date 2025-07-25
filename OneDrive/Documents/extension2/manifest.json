@@ -1,25 +1,21 @@
 {
   "manifest_version": 3,
-  "name": "NoiseBlock",
+  "name": "NoiseBlock (Twitter/X)",
   "version": "1.0.0",
-  "description": "Oculta publicaciones, comentarios y spoilers en redes sociales y sitios web definidos por el usuario mediante palabras clave personalizadas. Incluye filtro de patrocinados y modo sensible.",
+  "description": "Filtra y censura palabras, spoilers y contenido no deseado en Twitter/X con máxima precisión. Soporta censura de palabra, ocultar tweets completos, modo sensible, y es insensible a tildes y mayúsculas.",
   "permissions": [
     "activeTab",
     "storage"
   ],
   "host_permissions": [
     "https://*.twitter.com/*",
-    "https://*.facebook.com/*",
-    "https://*.reddit.com/*",
-    "<all_urls>"
+    "https://*.x.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
         "https://*.twitter.com/*",
-        "https://*.facebook.com/*",
-        "https://*.reddit.com/*",
-        "<all_urls>"
+        "https://*.x.com/*"
       ],
       "js": ["content_script.js"],
       "run_at": "document_idle"
@@ -27,7 +23,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "NoiseBlock"
+    "default_title": "NoiseBlock (Twitter/X)"
   },
   "icons": {
     "128": "icons/icon128.png"
