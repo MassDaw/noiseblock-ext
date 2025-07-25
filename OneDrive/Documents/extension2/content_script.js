@@ -8,6 +8,13 @@ let userKeywords = [];
 let sensitiveMode = false;
 let sponsoredMode = false;
 let userSites = [];
+let censorMode = 'word';
+
+function normalizeText(text) {
+  return text
+    ? text.normalize('NFD').replace(/[ 0-9]/g, c => c.toLowerCase()).replace(/\p{Diacritic}/gu, '').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    : '';
+}
 
 function getAllKeywords() {
   return sensitiveMode ? [...new Set([...userKeywords, ...SENSITIVE_WORDS])] : userKeywords;
@@ -15,11 +22,23 @@ function getAllKeywords() {
 
 function textMatchesKeywords(text, keywords) {
   if (!text) return false;
-  return keywords.some(word => text.toLowerCase().includes(word.toLowerCase()));
+  const normText = normalizeText(text);
+  return keywords.some(word => normText.includes(normalizeText(word)));
 }
 
 function hideElement(el) {
-  if (el && el.style) el.style.display = 'none';
+  if (!el || el.classList.contains('noiseblock-hidden')) return;
+  el.setAttribute('data-noiseblock-display', el.style.display || '');
+  el.style.display = 'none';
+  el.classList.add('noiseblock-hidden');
+}
+
+function restoreAllHidden() {
+  document.querySelectorAll('.noiseblock-hidden').forEach(el => {
+    el.style.display = el.getAttribute('data-noiseblock-display') || '';
+    el.classList.remove('noiseblock-hidden');
+    el.removeAttribute('data-noiseblock-display');
+  });
 }
 
 function isCustomSiteActive() {
@@ -27,7 +46,6 @@ function isCustomSiteActive() {
   const url = window.location.href;
   return userSites.some(pattern => {
     try {
-      // Convertir patrón tipo "https://ejemplo.com/*" a RegExp
       const regex = new RegExp('^' + pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '.*') + '$');
       return regex.test(url);
     } catch (e) { return false; }
@@ -35,7 +53,6 @@ function isCustomSiteActive() {
 }
 
 function filterTwitter(keywords, hideSponsored) {
-  // Tweets
   document.querySelectorAll('article').forEach(article => {
     const text = article.innerText;
     if (textMatchesKeywords(text, keywords)) hideElement(article);
@@ -44,13 +61,11 @@ function filterTwitter(keywords, hideSponsored) {
 }
 
 function filterReddit(keywords, hideSponsored) {
-  // Posts
   document.querySelectorAll('div[data-testid="post-container"]').forEach(post => {
     const text = post.innerText;
     if (textMatchesKeywords(text, keywords)) hideElement(post);
     else if (hideSponsored && /Promoted|Sugerido para ti|Publicidad|Anuncio/i.test(text)) hideElement(post);
   });
-  // Comments
   document.querySelectorAll('div[data-testid="comment"]').forEach(comment => {
     const text = comment.innerText;
     if (textMatchesKeywords(text, keywords)) hideElement(comment);
@@ -58,20 +73,129 @@ function filterReddit(keywords, hideSponsored) {
 }
 
 function filterFacebook(keywords, hideSponsored) {
-  // Posts
   document.querySelectorAll('div[role="article"]').forEach(article => {
     const text = article.innerText;
     if (textMatchesKeywords(text, keywords)) hideElement(article);
     else if (hideSponsored && /Sugerido para ti|Publicidad|Sponsored|Patrocinado/i.test(text)) hideElement(article);
   });
-  // Comments
   document.querySelectorAll('div[aria-label="Comentario"]').forEach(comment => {
     const text = comment.innerText;
     if (textMatchesKeywords(text, keywords)) hideElement(comment);
   });
 }
 
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+function buildAccentInsensitiveRegex(word) {
+  // Mapea letras a variantes con y sin tilde
+  const accentMap = {
+    a: '[aáàäâãåā]',
+    e: '[eéèëêē]',
+    i: '[iíìïîī]',
+    o: '[oóòöôõøō]',
+    u: '[uúùüûū]',
+    c: '[cç]',
+    n: '[nñ]',
+    A: '[AÁÀÄÂÃÅĀ]',
+    E: '[EÉÈËÊĒ]',
+    I: '[IÍÌÏÎĪ]',
+    O: '[OÓÒÖÔÕØŌ]',
+    U: '[UÚÙÜÛŪ]',
+    C: '[CÇ]',
+    N: '[NÑ]'
+  };
+  let pattern = '';
+  for (const c of word) {
+    pattern += accentMap[c] || accentMap[c.toLowerCase()] || escapeRegExp(c);
+  }
+  return new RegExp(pattern, 'giu');
+}
+function censorWordInElement(el, keywords) {
+  if (!el || el.classList.contains('noiseblock-censored')) return;
+  let origText = el.innerText;
+  let html = el.innerHTML;
+  let changed = false;
+  let normOrig = normalizeText(origText);
+  keywords.forEach(word => {
+    const normWord = normalizeText(word);
+    let idx = normOrig.indexOf(normWord);
+    while (idx !== -1 && normWord.length > 0) {
+      // Encuentra la subcadena original correspondiente
+      let before = origText.slice(0, idx);
+      let match = origText.slice(idx, idx + word.length);
+      // Si la subcadena original no coincide en longitud (por tildes), busca por posición en el texto
+      let realMatch = '';
+      let count = 0, i = 0;
+      while (count < normWord.length && (idx + i) < origText.length) {
+        let c = origText[idx + i];
+        if (c.match(/[\u0300-\u036f]/)) { i++; continue; }
+        realMatch += c;
+        count++;
+        i++;
+      }
+      // Reemplaza solo la primera ocurrencia de realMatch en el HTML
+      let safeMatch = realMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let censorSpan = '<span class="noiseblock-censored-word">•••••</span>';
+      let newHtml = html.replace(new RegExp(safeMatch, 'u'), censorSpan);
+      if (newHtml !== html) {
+        html = newHtml;
+        changed = true;
+      }
+      // Busca la siguiente ocurrencia
+      normOrig = normOrig.slice(idx + normWord.length);
+      origText = origText.slice(idx + realMatch.length);
+      idx = normOrig.indexOf(normWord);
+    }
+  });
+  if (changed) {
+    el.setAttribute('data-noiseblock-html', el.innerHTML);
+    el.innerHTML = html;
+    el.classList.add('noiseblock-censored');
+  }
+}
+function restoreAllCensoredWords() {
+  document.querySelectorAll('.noiseblock-censored').forEach(el => {
+    if (el.hasAttribute('data-noiseblock-html')) {
+      el.innerHTML = el.getAttribute('data-noiseblock-html');
+      el.removeAttribute('data-noiseblock-html');
+    }
+    el.classList.remove('noiseblock-censored');
+  });
+}
+function hideParagraph(el) {
+  let p = el.closest('p,li,blockquote,section,article,div');
+  if (p) hideElement(p);
+  else hideElement(el);
+}
+function filterCustomSites(keywords) {
+  if (censorMode === 'word') {
+    document.querySelectorAll('body *:not(script):not(style)').forEach(el => {
+      if (el.children.length === 0 && textMatchesKeywords(el.innerText, keywords)) {
+        censorWordInElement(el, keywords);
+      }
+    });
+  } else if (censorMode === 'paragraph') {
+    document.querySelectorAll('body *:not(script):not(style)').forEach(el => {
+      if (el.children.length === 0 && textMatchesKeywords(el.innerText, keywords)) {
+        hideParagraph(el);
+      }
+    });
+  } else {
+    document.querySelectorAll('body *:not(script):not(style)').forEach(el => {
+      if (el.children.length === 0 && textMatchesKeywords(el.innerText, keywords)) {
+        hideElement(el);
+      }
+    });
+  }
+}
+function restoreAllCustomCensor() {
+  restoreAllCensoredWords();
+}
+
 function runFilter() {
+  restoreAllHidden();
+  restoreAllCustomCensor();
   const keywords = getAllKeywords();
   const url = window.location.hostname;
   if (
@@ -86,22 +210,18 @@ function runFilter() {
     } else if (url.includes('facebook.com')) {
       filterFacebook(keywords, sponsoredMode);
     } else if (isCustomSiteActive()) {
-      // Filtro genérico para sitios personalizados: oculta bloques de texto que contengan palabras clave
-      document.querySelectorAll('body *:not(script):not(style)').forEach(el => {
-        if (el.children.length === 0 && textMatchesKeywords(el.innerText, keywords)) {
-          hideElement(el);
-        }
-      });
+      filterCustomSites(keywords);
     }
   }
 }
 
 function updateSettingsAndRun() {
-  chrome.storage.local.get(['keywords', 'sensitiveMode', 'sponsoredMode', 'sites'], data => {
+  chrome.storage.local.get(['keywords', 'sensitiveMode', 'sponsoredMode', 'sites', 'censorMode'], data => {
     userKeywords = Array.isArray(data.keywords) ? data.keywords : [];
     sensitiveMode = !!data.sensitiveMode;
     sponsoredMode = !!data.sponsoredMode;
     userSites = Array.isArray(data.sites) ? data.sites : [];
+    censorMode = data.censorMode || 'word';
     runFilter();
   });
 }
@@ -112,7 +232,15 @@ setInterval(runFilter, 2000);
 
 // Listen for changes from popup
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && (changes.keywords || changes.sensitiveMode || changes.sponsoredMode || changes.sites)) {
+  if (area === 'local' && (changes.keywords || changes.sensitiveMode || changes.sponsoredMode || changes.sites || changes.censorMode)) {
     updateSettingsAndRun();
   }
-}); 
+});
+
+// CSS para censura visual
+if (!document.getElementById('noiseblock-censor-style')) {
+  const style = document.createElement('style');
+  style.id = 'noiseblock-censor-style';
+  style.textContent = `.noiseblock-censored-word { background: #222; color: #fff; border-radius: 3px; padding: 0 3px; font-size: 1em; }`;
+  document.head.appendChild(style);
+} 

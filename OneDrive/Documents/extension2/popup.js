@@ -77,6 +77,24 @@ const translations = {
   }
 };
 
+const sensitiveInfoTexts = {
+  es: 'Filtra automáticamente palabras relacionadas con contenido delicado, spoilers, violencia, política, etc.',
+  en: 'Automatically filters words related to sensitive content, spoilers, violence, politics, etc.',
+  fr: 'Filtre automatiquement les mots liés au contenu sensible, spoilers, violence, politique, etc.',
+  de: 'Filtert automatisch Wörter zu sensiblen Themen, Spoilern, Gewalt, Politik usw.',
+  it: 'Filtra automaticamente parole su contenuti delicati, spoiler, violenza, politica, ecc.',
+  pt: 'Filtra automaticamente palavras de conteúdo sensível, spoilers, violência, política, etc.'
+};
+
+const censorModeLabels = {
+  es: ['Censurar palabra', 'Ocultar párrafo', 'Ocultar elemento completo'],
+  en: ['Censor word', 'Hide paragraph', 'Hide full element'],
+  fr: ['Censurer le mot', 'Masquer le paragraphe', 'Masquer l’élément complet'],
+  de: ['Wort zensieren', 'Absatz ausblenden', 'Ganzes Element ausblenden'],
+  it: ['Censura parola', 'Nascondi paragrafo', 'Nascondi elemento intero'],
+  pt: ['Censurar palavra', 'Ocultar parágrafo', 'Ocultar elemento completo']
+};
+
 let currentLang = 'es';
 const langData = {
   es: { flag: '🇪🇸', code: 'ES' },
@@ -107,6 +125,30 @@ function setLanguage(lang) {
   document.querySelectorAll('.dropdown-item').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.lang === lang);
   });
+  // Tooltip info modalidad sensible
+  let infoIcon = document.getElementById('sensitiveInfo');
+  let tooltip = infoIcon.querySelector('.info-tooltip');
+  if (!tooltip) {
+    tooltip = document.createElement('span');
+    tooltip.className = 'info-tooltip';
+    infoIcon.appendChild(tooltip);
+  }
+  tooltip.textContent = sensitiveInfoTexts[lang] || sensitiveInfoTexts['es'];
+
+  // Traducir selector de modo de censura
+  const modeOptions = document.querySelectorAll('#censorMode option');
+  const labels = censorModeLabels[lang] || censorModeLabels['es'];
+  modeOptions[0].textContent = labels[0];
+  modeOptions[1].textContent = labels[1];
+  modeOptions[2].textContent = labels[2];
+  document.querySelector('.censor-mode-label').textContent = {
+    es: 'Modo de censura:',
+    en: 'Censor mode:',
+    fr: 'Mode de censure :',
+    de: 'Zensurmodus:',
+    it: 'Modalità censura:',
+    pt: 'Modo de censura:'
+  }[lang] || 'Modo de censura:';
 }
 
 // Dropdown idioma
@@ -261,6 +303,18 @@ document.getElementById('addSiteForm').onsubmit = e => {
   addSite(document.getElementById('siteInput').value);
 };
 
+document.getElementById('addCurrentSiteBtn').onclick = function() {
+  if (!chrome.tabs) return;
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    if (!tabs || !tabs[0] || !tabs[0].url) return;
+    try {
+      const url = new URL(tabs[0].url);
+      const sitePattern = url.origin + '/*';
+      addSite(sitePattern);
+    } catch (e) {}
+  });
+};
+
 function loadSettings() {
   chrome.storage.local.get(['keywords', 'sensitiveMode', 'sponsoredMode', 'sites'], data => {
     renderKeywords(Array.isArray(data.keywords) ? data.keywords : []);
@@ -282,7 +336,19 @@ sensitiveMode.addEventListener('change', () => {
   chrome.storage.local.set({ sensitiveMode: sensitiveMode.checked });
 });
 
+// Guardar y cargar modo de censura
+const censorModeSelect = document.getElementById('censorMode');
+censorModeSelect.onchange = function() {
+  chrome.storage.local.set({ censorMode: censorModeSelect.value });
+};
+function loadCensorMode() {
+  chrome.storage.local.get(['censorMode'], data => {
+    censorModeSelect.value = data.censorMode || 'word';
+  });
+}
+
 // Inicializar
 loadSettings();
 loadLanguage();
-loadDarkMode(); 
+loadDarkMode();
+loadCensorMode(); 
