@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NoiseBlock</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header-row">
+      <span class="title">NoiseBlock</span>
+      <div class="header-actions">
+        <button id="darkModeBtn" title="Modo oscuro" class="icon-btn">🌙</button>
+        <div class="dropdown" id="langDropdown">
+          <button class="dropdown-toggle" id="langToggleBtn">
+            <span id="langFlag">🇪🇸</span> <span id="langCode">ES</span> ▼
+          </button>
+          <div class="dropdown-menu" id="langMenu">
+            <button class="dropdown-item" data-lang="es">🇪🇸 ES</button>
+            <button class="dropdown-item" data-lang="en">🇬🇧 EN</button>
+            <button class="dropdown-item" data-lang="fr">🇫🇷 FR</button>
+            <button class="dropdown-item" data-lang="de">🇩🇪 DE</button>
+            <button class="dropdown-item" data-lang="it">🇮🇹 IT</button>
+            <button class="dropdown-item" data-lang="pt">🇵🇹 PT</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <form id="addForm" class="input-row">
+      <input type="text" id="keywordInput" placeholder="Añadir palabra clave" maxlength="32" autocomplete="off" required>
+      <button type="submit" title="Añadir" class="add-btn">+</button>
+    </form>
+    <ul id="keywordList" class="list"></ul>
+    <div class="options">
+      <label class="checkbox-row"><input type="checkbox" id="sensitiveMode"><span id="sensitiveLabel">Modo Sensible</span></label>
+      <label class="checkbox-row"><input type="checkbox" id="sponsoredMode"><span id="sponsoredLabel">Ocultar patrocinados</span></label>
+    </div>
+    <div class="sites-section">
+      <label class="sites-label" id="customSitesLabel">Sitios personalizados:</label>
+      <form id="addSiteForm" class="input-row">
+        <input type="text" id="siteInput" placeholder="https://ejemplo.com/*" maxlength="128" autocomplete="off" required>
+        <button type="submit" title="Añadir sitio" class="add-btn">+</button>
+      </form>
+      <ul id="siteList" class="list"></ul>
+    </div>
+    <div class="coffee-section">
+      <div class="coffee-msg" id="coffeeMsg">¿Esta extensión te ha sido útil? </div>
+      <a href="https://coff.ee/freeextensions" target="_blank" class="coffee-btn" id="coffeeBtn">Invítame un café</a>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
